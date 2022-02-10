@@ -237,3 +237,98 @@ WHERE price < ANY (
     FROM book
     GROUP BY author
     );
+
+/*
+1.4.5
+Посчитать сколько и каких экземпляров книг нужно заказать поставщикам, чтобы на складе стало одинаковое количество 
+экземпляров каждой книги, равное значению самого большего количества экземпляров одной книги на складе. 
+Вывести название книги, ее автора, текущее количество экземпляров на складе и количество заказываемых экземпляров книг. 
+Последнему столбцу присвоить имя Заказ. В результат не включать книги, которые заказывать не нужно.
+*/
+
+SELECT title, author, amount, 
+    ((SELECT MAX(amount) FROM book) - amount) as "Заказ"
+FROM book
+WHERE ((SELECT MAX(amount) FROM book) - amount > 0);
+
+/*
+1.5.2 
+Создать таблицу поставка (supply), которая имеет ту же структуру, что и таблиц book.
+*/
+
+CREATE TABLE supply(
+    supply_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(50),
+    author VARCHAR(30),
+    price DECIMAL(8,2),
+    amount INT
+);
+
+/*
+1.5.3 Занесите в таблицу supply четыре записи
+*/
+
+INSERT INTO supply(title, author, price, amount)
+VALUES
+    ("Лирика", "Пастернак Б.Л.", 518.99, 2),
+    ("Черный человек", "Есенин С.А.", 570.20, 6),
+    ("Белая гвардия", "Булгаков М.А.", 540.50, 7),
+    ("Идиот", "Достоевский Ф.М.", 360.80, 3);
+SELECT * FROM supply;
+
+/*
+1.5.4
+Добавление записей из другой таблицы
+Добавить из таблицы supply в таблицу book, все книги, кроме книг, написанных Булгаковым М.А. и Достоевским Ф.М.
+Задание нужно выполнить без вложенных запросов.
+*/
+INSERT INTO book (title, author, price, amount)
+SELECT title, author, price, amount
+FROM supply
+WHERE (author NOT LIKE "Булгаков М.А.") AND (author NOT LIKE "Достоевский Ф.М.");
+
+SELECT * FROM book;
+
+/*
+1.5.5 Добавление записей, вложенные запросы
+Занести из таблицы supply в таблицу book только те книги, авторов которых нет в  book.
+С ИСПОЛЬЗОВАНИЕМ ВЛОЖЕННОГО ЗАПРОСА
+*/
+
+INSERT INTO book (title, author, price, amount)
+SELECT title, author, price, amount 
+FROM supply
+WHERE author NOT IN (
+    SELECT author
+    FROM book
+    );
+    
+SELECT * FROM book;
+
+/*
+1.5.6 Запросы на обновление
+UPDATE таблица SET поле = выражение
+Уменьшить на 10% цену тех книг в таблице book, количество которых принадлежит интервалу от 5 до 10, включая границы.
+*/
+
+UPDATE book
+SET price = 0.9 * price
+WHERE (amount BETWEEN 5 AND 10);
+
+SELECT * FROM book;
+
+/*
+1.5.7 Запросы на обновление нескольких столбцов
+UPDATE таблица SET поле1 = выражение1, поле2 = выражение2
+
+В таблице book необходимо скорректировать значение для покупателя в столбце buy таким образом, 
+чтобы оно не превышало количество экземпляров книг, указанных в столбце amount. 
+А цену тех книг, которые покупатель не заказывал, снизить на 10%.
+*/
+
+UPDATE book
+SET buy = IF(amount - buy < 0, amount, buy),
+    price = IF(buy = 0, price * 0.9, price);
+
+SELECT * FROM book;
+

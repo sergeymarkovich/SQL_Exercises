@@ -332,3 +332,59 @@ SET buy = IF(amount - buy < 0, amount, buy),
 
 SELECT * FROM book;
 
+/*
+1.5.8 Запросы на обновление нескольких таблиц 
+    для столбцов, имеющих одинаковые имена, необходимо указывать имя таблицы, к которой они относятся, 
+например, book.price – столбец price из таблицы book, supply.price – столбец price из таблицы supply;
+    все таблицы, используемые в запросе, нужно перечислить после ключевого слова UPDATE;
+    в запросе обязательно условие WHERE, в котором указывается условие при котором обновляются данные.
+
+*/
+Для тех книг в таблице book , которые есть в таблице supply, 
+не только увеличить их количество в таблице book ( увеличить их количество на значение столбца amountтаблицы supply), 
+но и пересчитать их цену (для каждой книги найти сумму цен из таблиц book и supply и разделить на 2).
+
+UPDATE book, supply 
+SET book.amount = book.amount + supply.amount,
+    book.price = (book.price + supply.price) / 2
+WHERE book.title = supply.title AND book.author = supply.author;
+
+SELECT * FROM book;
+
+/*
+1.5.9 Запросы на удаление
+DELETE FROM таблица;    Этот запрос удаляет все записи из указанной после FROM таблицы.
+
+Удалить из таблицы supply книги тех авторов, общее количество экземпляров книг которых в таблице book превышает 10.
+*/
+
+DELETE FROM supply
+WHERE author IN 
+    (
+    SELECT author 
+    FROM book
+    WHERE amount > 10
+    );
+
+SELECT * FROM supply;
+
+/*
+1.5.10 Запросы на создание таблицы
+    CREATE TABLE имя_таблицы AS
+    SELECT ...
+
+Создать таблицу заказ (ordering), куда включить авторов и названия тех книг, количество экземпляров которых в таблице book 
+меньше среднего количества экземпляров книг в таблице book. В таблицу включить столбец   amount, 
+в котором для всех книг указать одинаковое значение - среднее количество экземпляров книг в таблице book.
+*/
+
+CREATE TABLE ordering AS
+    SELECT author, title, 
+        (
+            SELECT ROUND(AVG(amount))
+            FROM book
+        ) AS "amount"
+    FROM book
+    WHERE amount < (SELECT ROUND(AVG(amount)) FROM book);
+
+SELECT * FROM ordering;

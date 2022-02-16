@@ -72,3 +72,34 @@ CREATE TABLE book (
     FOREIGN KEY (genre_id) REFERENCES genre (genre_id) ON DELETE SET NULL
 );
 SHOW COLUMNS FROM book;
+
+
+
+
+/* Соединение INNER JOIN
+	-каждая строка одной таблицы сопоставляется с каждой строкой второй таблицы;
+	-для полученной «соединённой» строки проверяется условие соединения;
+	-если условие истинно, в таблицу результата добавляется соответствующая «соединённая» строка;
+SELECT
+ ...
+FROM
+    таблица_1 INNER JOIN  таблица_2
+    ON условие (таблица_2.столбец_PrimaryKey = таблица1.столбец_ForeignKey)
+
+Вывести название, жанр и цену тех книг, количество которых больше 8, в отсортированном по убыванию цены виде.
+*/
+SELECT title, name_genre, price FROM book
+INNER JOIN genre ON genre.genre_id = book.genre_id
+WHERE amount > 8
+ORDER BY price DESC;
+
+
+/* Внешнее соединение LEFT и RIGHT OUTER JOIN
+Вывести все жанры, которые не представлены в книгах на складе.
+*/
+SELECT name_genre FROM genre
+LEFT JOIN book ON book.genre_id = genre.genre_id
+WHERE book.genre_id IS NULL;
+
+
+/*Перекрестное соединение CROSS JOIN

@@ -136,3 +136,18 @@ FROM genre
     INNER JOIN author ON author.author_id = book.author_id
 WHERE name_genre LIKE 'Роман'
 ORDER BY title ASC;
+
+/* Запросы для нескольких таблиц с группировкой
+Посчитать количество экземпляров  книг каждого автора из таблицы author.  
+Вывести тех авторов,  количество книг которых меньше 10, в отсортированном по возрастанию количества виде. 
+Последний столбец назвать Количество.
+*/
+
+SELECT name_author, SUM(book.amount) AS 'Количество'
+FROM author
+    LEFT JOIN book ON author.author_id = book.author_id
+GROUP BY name_author
+HAVING SUM(amount) < 10 OR SUM(book.title) IS NULL
+ORDER BY Количество ASC;
+
+/*Запросы для нескольких таблиц со вложенными запросами

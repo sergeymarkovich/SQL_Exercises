@@ -103,3 +103,36 @@ WHERE book.genre_id IS NULL;
 
 
 /*Перекрестное соединение CROSS JOIN
+SELECT
+ ...
+FROM
+    таблица_1 CROSS JOIN  таблица_2
+...
+
+или
+
+SELECT
+ ...
+FROM
+    таблица_1, таблица_2
+...
+    
+    Необходимо в каждом городе провести выставку книг каждого автора в течение 2020 года. 
+Дату проведения выставки выбрать случайным образом. Создать запрос, который выведет город, автора и дату проведения выставки. 
+Последний столбец назвать Дата. Информацию вывести, отсортировав сначала в алфавитном порядке по названиям городов, 
+а потом по убыванию дат проведения выставок
+*/
+SELECT name_city, name_author, DATE_ADD('2020-01-01', INTERVAL FLOOR(RAND()*360) DAY) AS 'Дата'
+FROM author CROSS JOIN city
+ORDER BY name_city ASC, Дата DESC;
+
+/* Запросы на выборку из нескольких таблиц
+ Вывести информацию о книгах (жанр, книга, автор), относящихся к жанру, включающему слово «роман» в отсортированном по названиям книг виде.
+*/
+
+SELECT name_genre, title, name_author 
+FROM genre
+    INNER JOIN book ON genre.genre_id = book.genre_id
+    INNER JOIN author ON author.author_id = book.author_id
+WHERE name_genre LIKE 'Роман'
+ORDER BY title ASC;

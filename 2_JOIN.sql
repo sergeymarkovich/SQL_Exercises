@@ -151,3 +151,4 @@ HAVING SUM(amount) < 10 OR SUM(book.title) IS NULL
 ORDER BY Количество ASC;
 
 /*Запросы для нескольких таблиц со вложенными запросами
+

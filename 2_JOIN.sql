@@ -151,5 +151,176 @@ HAVING SUM(amount) < 10 OR SUM(book.title) IS NULL
 ORDER BY Количество ASC;
 
 /*Запросы для нескольких таблиц со вложенными запросами
+ Вывести в алфавитном порядке всех авторов, которые пишут только в одном жанре. 
+ Поскольку у нас в таблицах так занесены данные, что у каждого автора книги только в одном жанре,  
+ для этого запроса внесем изменения в таблицу book. Пусть у нас  книга Есенина «Черный человек» относится к жанру «Роман», 
+ а книга Булгакова «Белая гвардия» к «Приключениям» (эти изменения в таблицы уже внесены).
+
+Шаг 1 - отбираем ID авторов и ID жанров 
+
+    SELECT author_id, COUNT(DISTINCT genre_id) AS genre_id FROM book
+    GROUP BY author_id;
+
+Шаг 2 - отбираем ID авторов у которых книга в одном жанре, чтобы потом по этому запросу сделать WHERE = "этому запросу"
+
+    SELECT MIN(genre_id) 
+    FROM(
+        SELECT author_id, COUNT(DISTINCT genre_id) AS genre_id FROM book
+        GROUP BY author_id
+    ) genre_min
+
+Шаг 3 - Выводим авторов по фамилии и genre_id 
+
+    SELECT name_author FROM author
+    INNER JOIN book ON author.author_id = book.author_id
+    GROUP BY name_author
+
+Шаг 4 - Включим запрос с шага 2 в условие отбора запроса с шага 3 и получим результат 
+
+    SELECT name_author FROM author
+    INNER JOIN book ON author.author_id = book.author_id
+    GROUP BY name_author    
+    HAVING COUNT(DISTINCT genre_id) = 
+    (
+        SELECT MIN(genre_id) 
+        FROM(
+            SELECT author_id, COUNT(DISTINCT genre_id) AS genre_id FROM book
+            GROUP BY author_id
+        ) genre_min
+    )
+
+__________________________
+Вложенные запросы в операторах соединения
+    Вывести информацию о книгах (название книги, фамилию и инициалы автора, название жанра, цену и количество экземпляров книг), 
+    написанных в самых популярных жанрах, в отсортированном в алфавитном порядке по названию книг виде. Самым популярным считать жанр, 
+    общее количество экземпляров книг которого на складе максимально.
+
+Шаг 1 - Найдем общее количество книг по каждому жанру, отсортируем его по убыванию и ограничим вывод одной строкой. 
+Рекомендуется, если запрос будет использоваться в качестве вложенного (особенно в операциях соединения), 
+вычисляемым полям запроса давать собственное имя.
+
+    SELECT genre_id, SUM(amount) AS sum_amount
+    FROM book
+    GROUP BY genre_id
+    ORDER BY SUM(amount) DESC
+    LIMIT 1
+
+Кажется, что, уже используя этот запрос, можно получить id самого популярного жанра. 
+Но это не так, поскольку несколько жанров могут иметь одинаковую популярность. 
+Поэтому нам необходим запрос, который отберет ВСЕ жанры, суммарное количество книг которых равно sum_amount.
+
+Шаг 2 - Используя запрос с предыдущего шага, найдем названия самых популярных жанров
+
+       SELECT request_1.name_genre
+        FROM
+        (
+            SELECT name_genre, SUM(amount) AS sum_amount
+            FROM book
+                INNER JOIN genre ON book.genre_id = genre.genre_id
+            GROUP BY name_genre
+        ) request_1
+        INNER JOIN
+        (
+            SELECT name_genre, SUM(amount) AS sum_amount
+            FROM genre
+                INNER JOIN book ON book.genre_id = genre.genre_id
+            GROUP BY name_genre
+            ORDER BY sum_amount DESC
+            LIMIT 1    
+        ) request_2
+        ON request_1.sum_amount = request_2.sum_amount
+
+Шаг 3 - Сделаем финальный вывод 
+*/
+    SELECT title, name_author, name_genre, price, amount
+    FROM book
+        INNER JOIN author ON author.author_id = book.author_id
+        INNER JOIN genre ON genre.genre_id = book.genre_id
+    WHERE name_genre IN 
+    (
+        SELECT request_1.name_genre
+        FROM
+        (
+            SELECT name_genre, SUM(amount) AS sum_amount
+            FROM book
+                INNER JOIN genre ON book.genre_id = genre.genre_id
+            GROUP BY name_genre
+        ) request_1
+        INNER JOIN
+        (
+            SELECT name_genre, SUM(amount) AS sum_amount
+            FROM genre
+                INNER JOIN book ON book.genre_id = genre.genre_id
+            GROUP BY name_genre
+            ORDER BY sum_amount DESC
+            LIMIT 1    
+        ) request_2
+        ON request_1.sum_amount = request_2.sum_amount
+    )
+    ORDER BY title;
+
+/* Операция соединение, использование USING()
+При описании соединения таблиц с помощью JOIN в некоторых случаях вместо ON и следующего за ним условия можно использовать оператор USING().
+USING позволяет указать набор столбцов, которые есть в обеих объединяемых таблицах. Если база данных хорошо спроектирована, 
+а каждый внешний ключ имеет такое же имя, как и соответствующий первичный ключ (например, genre.genre_id = book.genre_id), 
+тогда можно использовать предложение USING для реализации операции JOIN. 
+
+ Если в таблицах supply  и book есть одинаковые книги, которые имеют равную цену,  вывести их название и автора, 
+ а также посчитать общее количество экземпляров книг в таблицах supply и book,  столбцы назвать Название, Автор  и Количество.
+*/
+
+SELECT book.title AS Название, name_author AS Автор, (supply.amount + book.amount) AS Количество
+FROM book
+    INNER JOIN author USING (author_id)
+    INNER JOIN supply ON supply.title = book.title and supply.price = book.price and supply.author = author.name_author;
+
+
+
+
+
+
+/* 3.2 Запросы на обновление, связанные таблицы
+    UPDATE таблица_1
+         ... JOIN таблица_2
+         ON выражение
+         ...
+    SET ...   
+    WHERE ...;
+*/
+
+UPDATE book 
+    INNER JOIN author USING (author_id)
+    INNER JOIN supply ON supply.title = book.title and supply.author = author.name_author
+SET book.amount = book.amount + supply.amount,
+    book.price = (book.price * book.amount + supply.price * supply.amount) / (book.amount + supply.amount),
+    supply.amount = 0
+WHERE book.price != supply.price;
+
+SELECT * FROM book;
+
+SELECT * FROM supply;
+
+/* Запросы на добавление, связанные таблицы
+    INSERT INTO таблица (список_полей)
+    SELECT список_полей_из_других_таблиц
+    FROM 
+        таблица_1 
+        ... JOIN таблица_2 ON ...
+        ...
+
+Включить новых авторов в таблицу author с помощью запроса на добавление, а затем вывести все данные из таблицы author. 
+ Новыми считаются авторы, которые есть в таблице supply, но нет в таблице author.
+*/
+
+INSERT INTO author(name_author)
+    SELECT supply.author
+    FROM author
+    RIGHT JOIN supply on author.name_author = supply.author
+    WHERE name_author IS Null;
+
+SELECT * FROM author
+
+/* Запрос на добавление, связанные таблицы
+
 
 

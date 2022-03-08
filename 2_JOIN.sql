@@ -309,7 +309,7 @@ SELECT * FROM supply;
         ...
 
 Включить новых авторов в таблицу author с помощью запроса на добавление, а затем вывести все данные из таблицы author. 
- Новыми считаются авторы, которые есть в таблице supply, но нет в таблице author.
+Новыми считаются авторы, которые есть в таблице supply, но нет в таблице author.
 */
 
 INSERT INTO author(name_author)
@@ -318,9 +318,23 @@ INSERT INTO author(name_author)
     RIGHT JOIN supply on author.name_author = supply.author
     WHERE name_author IS Null;
 
-SELECT * FROM author
+SELECT * FROM author;
 
 /* Запрос на добавление, связанные таблицы
+Добавить новые книги из таблицы supply в таблицу book на основе сформированного выше запроса. Затем вывести для просмотра таблицу book.
+*/
 
+INSERT INTO book(title, author_id, price, amount)
+    SELECT title, author_id, price, amount
+    FROM author INNER JOIN supply
+        ON supply.author = author.name_author
+    WHERE
+        (title, author_id) NOT IN (
+        SELECT title, book.author_id
+        FROM author INNER JOIN book
+            ON book.author_id = author.author_id);
+        
+SELECT * FROM book;
 
+/*Запрос на обновление, вложенные запросы
 

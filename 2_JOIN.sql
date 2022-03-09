@@ -337,4 +337,3 @@ INSERT INTO book(title, author_id, price, amount)
 SELECT * FROM book;
 
 /*Запрос на обновление, вложенные запросы
-

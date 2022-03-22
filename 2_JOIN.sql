@@ -337,6 +337,7 @@ INSERT INTO book(title, author_id, price, amount)
 SELECT * FROM book;
 
 /*Запрос на обновление, вложенные запросы
+<<<<<<< HEAD
 Каскадное удаление записей связанных таблиц
 При создании таблицы для внешних ключей с помощью ON DELETE устанавливаются опции, которые определяют действия , 
 выполняемые при удалении связанной строки из главной таблицы.
@@ -397,4 +398,27 @@ DELETE FROM author
     
 SELECT * FROM book;
 
+=======
+Занести для книги «Стихотворения и поэмы» Лермонтова жанр «Поэзия», а для книги «Остров сокровищ» Стивенсона - «Приключения». (Использовать два запроса)
+*/
+>>>>>>> a301a9d22a111a85df237e751c6275ed05e48cf0
 
+UPDATE book
+SET genre_id = 
+(
+    SELECT genre_id
+    FROM genre 
+    WHERE name_genre = 'Поэзия'
+)
+WHERE title = 'Стихотворения и поэмы';
+
+UPDATE book
+SET genre_id = 
+(
+    SELECT genre_id
+    FROM genre 
+    WHERE name_genre = 'Приключения'
+)
+WHERE title = 'Остров сокровищ';
+
+SELECT * FROM book;

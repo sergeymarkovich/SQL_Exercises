@@ -337,4 +337,64 @@ INSERT INTO book(title, author_id, price, amount)
 SELECT * FROM book;
 
 /*Запрос на обновление, вложенные запросы
+Каскадное удаление записей связанных таблиц
+При создании таблицы для внешних ключей с помощью ON DELETE устанавливаются опции, которые определяют действия , 
+выполняемые при удалении связанной строки из главной таблицы.
+*/
+
+DELETE FROM author
+WHERE author_id IN 
+(
+    SELECT author_id 
+    FROM book
+    GROUP BY author_id
+    HAVING SUM(amount) < 20 
+);
+
+SELECT * FROM author;
+
+SELECT * FROM book;
+
+/*
+Удаление записей главной таблицы с сохранением записей в зависимой
+При создании таблицы для внешних ключей с помощью ON DELETE устанавливаются опции, 
+которые определяют действия, выполняемые при удалении связанной строки из главной таблицы.
+Если задано SET NULL, то при удалении связанной строки из главной таблицы в зависимой, в столбце внешнего ключа, 
+устанавливается значение NULL.
+*/
+
+DELETE FROM genre
+WHERE genre_id IN 
+(
+    SELECT genre_id 
+    FROM book
+    GROUP BY genre_id
+    HAVING COUNT(title) < 4
+);
+
+SELECT * FROM book;
+
+SELECT * FROM genre;
+
+/*
+Удаление записей, использование связанных таблиц
+При удалении записей из таблицы можно использовать информацию из других связанных с ней таблиц. 
+В этом случае синтаксис запроса имеет вид:
+    DELETE FROM таблица_1
+    USING 
+        таблица_1 
+        INNER JOIN таблица_2 ON ...
+    WHERE ...
+*/
+
+DELETE FROM author
+    USING author
+        INNER JOIN book 
+            ON book.author_id = author.author_id
+        INNER JOIN genre 
+            ON genre.genre_id = book.genre_id
+    WHERE genre.name_genre LIKE 'Поэзия';
+    
+SELECT * FROM book;
+
 
